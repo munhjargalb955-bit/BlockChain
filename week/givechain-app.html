@@ -1,115 +1,155 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GiveChain DApp</title>
-<style>
-  :root { --bg:#f6f7fb; --card:#fff; --ink:#111827; --mute:#6b7280; --line:#e5e7eb; --pri:#4f46e5; --ok:#15803d; --bad:#dc2626; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,"Malgun Gothic",sans-serif; }
-  main { max-width:860px; margin:0 auto; padding:24px 16px 64px; }
-  h1 { margin:0 0 4px; } h2 { font-size:16px; margin:0 0 12px; }
-  section, .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:16px 0; }
-  button { background:var(--pri); color:#fff; border:0; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:14px; }
-  button.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
-  button.ok { background:var(--ok); } button.bad { background:var(--bad); }
-  button:disabled { opacity:.5; cursor:not-allowed; }
-  input, select { padding:8px; border:1px solid var(--line); border-radius:8px; font-size:14px; max-width:100%; }
-  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:6px 0; }
-  .mono { font-family:ui-monospace,Consolas,monospace; font-size:13px; }
-  .mute { color:var(--mute); font-size:13px; }
-  .badge { display:inline-block; padding:2px 10px; border-radius:99px; font-size:12px; font-weight:600; background:#eef2ff; color:var(--pri); }
-  .badge.SUCCESS { background:#dcfce7; color:var(--ok); } .badge.FAILED { background:#fee2e2; color:var(--bad); }
-  .kv { display:grid; grid-template-columns:120px 1fr; gap:4px 12px; font-size:14px; margin:8px 0; }
-  .bar { height:8px; background:var(--line); border-radius:99px; overflow:hidden; margin:8px 0; }
-  .bar > i { display:block; height:100%; background:var(--ok); }
-  #status { padding:10px 14px; border-radius:8px; background:#111827; color:#e5e7eb; min-height:20px; font-size:14px; }
-  #status a { color:#5eead4; }
-  ul { list-style:none; padding:0; margin:0; } li { padding:6px 0; border-bottom:1px solid var(--line); font-size:14px; }
-  [hidden] { display:none !important; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GiveChain V2</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #f7f7f7;
+    }
+
+    section,
+    .campaign {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+
+    input,
+    select,
+    button {
+      padding: 10px 12px;
+      margin: 4px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button { cursor: pointer; }
+    button:hover { opacity: 0.85; }
+
+    .campaign-info,
+    #accountInfo,
+    #eventList {
+      line-height: 1.8;
+    }
+
+    #status {
+      background: #eee;
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 20px;
+      min-height: 48px;
+      word-break: break-all;
+    }
+
+    a { color: #3366cc; }
+  </style>
 </head>
+
 <body>
 <main>
+
   <h1>GiveChain</h1>
-  <div class="mute">GiveChainV2 DApp · Browser → ethers.js → MetaMask → Chain</div>
 
   <section>
-    <div class="row">
-      <button id="connectBtn">MetaMask 연결</button>
-      <button id="refreshBtn" class="ghost">새로고침</button>
-      <span class="mute" id="netLabel"></span>
+    <h2>Wallet</h2>
+
+    <button id="connectBtn">
+      MetaMask 연결
+    </button>
+
+    <button id="refreshBtn">
+      새로고침
+    </button>
+
+    <div id="accountInfo">
+      Wallet 연결 필요
     </div>
-    <div id="accountInfo" class="mono">Wallet 연결 필요</div>
   </section>
 
   <section id="ownerPanel" hidden>
-    <h2>Campaign 생성 (Owner)</h2>
-    <div class="row">
-      <input id="titleInput" placeholder="제목" />
-      <input id="goalInput" placeholder="목표 금액" inputmode="decimal" />
-    </div>
-    <div class="row">
-      <input id="beneficiaryInput" placeholder="Beneficiary 0x…" size="46" />
-      <select id="assetSelect"><option value="GVT">GVT</option><option value="ETH">ETH</option></select>
-      <button id="createBtn">Campaign 생성</button>
-    </div>
+    <h2>Campaign 생성</h2>
+
+    <input id="titleInput" placeholder="Campaign 제목">
+    <input id="goalInput" placeholder="목표 금액">
+    <input id="beneficiaryInput" placeholder="Beneficiary Address" size="44">
+
+    <select id="assetSelect">
+      <option value="ETH">ETH</option>
+      <option value="GVT">GVT</option>
+    </select>
+
+    <button id="createBtn">
+      Campaign 생성
+    </button>
   </section>
 
   <section>
     <h2>Campaign</h2>
-    <div id="campaignList"><span class="mute">연결 후 표시됩니다</span></div>
+
+    <div id="campaignList">
+      Wallet 연결 후 Campaign이 표시됩니다.
+    </div>
   </section>
 
   <section>
-    <div class="row"><h2 style="margin:0">On-chain Event</h2><button id="eventsBtn" class="ghost">기부 Event 조회</button></div>
+    <h2>On-chain Activity</h2>
+
+    <button id="eventsBtn">
+      기부 Event 조회
+    </button>
+
     <ul id="eventList"></ul>
   </section>
 
-  <div id="status"></div>
+  <div id="status">Ready</div>
+
 </main>
 
 <script type="module">
-import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@6.17.0/+esm";
 
-/* ===== CONFIG: 네트워크마다 바뀌는 값 =====
-   NETWORK 를 "local" 또는 "sepolia" 로 바꾼다. Private Key 는 절대 넣지 않는다. */
-const NETWORK = "local";
-const NETWORKS = {
-  local: {
-    name: "Hardhat Local", chainId: "0x7a6a", explorer: "",
-    // 새 `hardhat node` 에서 deployV2.ts 를 처음 실행했을 때의 결정적 주소
-    giveChain: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    token: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    deploymentBlock: 0
-  },
-  sepolia: {
-    name: "Sepolia", chainId: "0xaa36a7", explorer: "https://sepolia.etherscan.io",
-    giveChain: "0xYOUR_GIVECHAINV2_ADDRESS",
-    token: "0xYOUR_GIVETOKENV2_ADDRESS",
-    deploymentBlock: 0
-  }
+import { ethers } from
+"https://cdn.jsdelivr.net/npm/ethers@6.17.0/+esm";
+
+// Hardhat Local (chain 31338). Sepolia 로 바꿀 때는 아래 값만 교체한다.
+//   chainId: "0xaa36a7", explorer: "https://sepolia.etherscan.io"
+const CONFIG = {
+  chainId: "0x7a6a",
+  explorer: "",
+  giveChain: "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+  token: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+  deploymentBlock: 0
 };
-const CONFIG = NETWORKS[NETWORK];
 
-/* ===== ABI (DApp 이 쓰는 것만) ===== */
 const GIVECHAIN_ABI = [
   "function owner() view returns (address)",
   "function campaignCount() view returns (uint256)",
-  "function campaigns(uint256) view returns (address owner, string title, uint256 goal, uint256 raised, address beneficiary, address asset, uint8 stage, bool withdrawn, uint256 refunded)",
+  "function campaigns(uint256) view returns (address owner,string title,uint256 goal,uint256 raised,address beneficiary,address asset,uint8 stage,bool withdrawn,uint256 refunded)",
   "function donations(uint256,address) view returns (uint256)",
+  "function lifetimeDonatedByAsset(address) view returns (uint256)",
   "function createCampaign(string,uint256,address,address) returns (uint256)",
   "function donateETH(uint256) payable",
   "function donateToken(uint256,uint256)",
   "function finalizeCampaign(uint256)",
   "function withdraw(uint256)",
   "function refund(uint256)",
-  "event Donated(uint256 indexed campaignId, address indexed donor, address indexed asset, uint256 amount)",
-  "event CampaignFinalized(uint256 indexed campaignId, uint8 stage)",
-  "event Withdrawn(uint256 indexed campaignId, address indexed beneficiary, address indexed asset, uint256 amount)",
-  "event Refunded(uint256 indexed campaignId, address indexed donor, address indexed asset, uint256 amount)"
+  "event CampaignCreated(uint256 indexed campaignId,address indexed owner,string title,uint256 goal,address indexed beneficiary,address asset)",
+  "event Donated(uint256 indexed campaignId,address indexed donor,address indexed asset,uint256 amount)",
+  "event CampaignFinalized(uint256 indexed campaignId,uint8 stage)",
+  "event Withdrawn(uint256 indexed campaignId,address indexed beneficiary,address indexed asset,uint256 amount)",
+  "event Refunded(uint256 indexed campaignId,address indexed donor,address indexed asset,uint256 amount)"
 ];
+
 const ERC20_ABI = [
   "function symbol() view returns (string)",
   "function decimals() view returns (uint8)",
@@ -118,51 +158,88 @@ const ERC20_ABI = [
   "function approve(address,uint256) returns (bool)"
 ];
 
-/* ===== 상태 ===== */
 const STAGES = ["NONE", "OPEN", "SUCCESS", "FAILED"];
-let provider, signer, account, appOwner;
-let giveChainRead, giveChainWrite, tokenRead, tokenWrite;
-let tokenDecimals = 18, tokenSymbol = "GVT";
-let busy = false;
 
-/* ===== Utility ===== */
+let provider;
+let signer;
+let account;
+let appOwner;
+let giveChainRead;
+let giveChainWrite;
+let tokenRead;
+let tokenWrite;
+let tokenDecimals = 18;
+let tokenSymbol = "GVT";
+
 const $ = (id) => document.getElementById(id);
-const same = (a, b) => a?.toLowerCase() === b?.toLowerCase();
-const short = (v) => `${v.slice(0, 6)}…${v.slice(-4)}`;
-const stageName = (v) => STAGES[Number(v)];
-const txUrl = (h) => `${CONFIG.explorer}/tx/${h}`;
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-const setStatus = (html) => { $("status").innerHTML = html; };
-const isETH = (asset) => same(asset, ethers.ZeroAddress);
-const fmt = (asset, v) => isETH(asset)
-  ? `${ethers.formatEther(v)} ETH`
-  : `${ethers.formatUnits(v, tokenDecimals)} ${tokenSymbol}`;
-const txLink = (h) => CONFIG.explorer
-  ? `<a href="${txUrl(h)}" target="_blank" rel="noopener">${short(h)} ↗</a>`
-  : `<span class="mono">${short(h)}</span>`;
 
-function friendlyError(e) {
-  if (e?.code === 4001 || e?.code === "ACTION_REJECTED") return "사용자가 거부했습니다";
-  const name = e?.revert?.name || e?.errorName;
-  const map = {
-    ERC20InsufficientAllowance: "GVT 사용 승인(Approve) 후 다시 시도하세요",
-    ERC20InsufficientBalance: "GVT 잔액이 부족합니다",
-    OnlyOwner: "Owner만 가능합니다", OnlyBeneficiary: "Beneficiary만 가능합니다",
-    InvalidStage: "현재 상태에서는 불가능합니다", AlreadyWithdrawn: "이미 출금했습니다",
-    NoDonation: "환불할 기부가 없습니다", WrongAssetType: "이 캠페인의 자산 종류와 다릅니다",
-    InvalidDonation: "기부 금액을 확인하세요", InvalidAsset: "유효하지 않은 자산입니다"
-  };
-  if (map[name]) return map[name];
-  return esc(e?.shortMessage || e?.reason || e?.message || String(e));
+const same = (a, b) =>
+  a?.toLowerCase() === b?.toLowerCase();
+
+const short = (value) => {
+  if (!value) return "-";
+  return value.slice(0, 6) + "..." + value.slice(-4);
+};
+
+const stageName = (value) =>
+  STAGES[Number(value)] ?? "UNKNOWN";
+
+const txUrl = (hash) =>
+  `${CONFIG.explorer}/tx/${hash}`;
+
+function setStatus(message) {
+  $("status").innerHTML = message;
 }
 
-/* ===== 연결 ===== */
+function friendlyError(error) {
+  if (
+    error?.code === 4001 ||
+    error?.code === "ACTION_REJECTED"
+  ) {
+    return "사용자가 Transaction을 취소했습니다.";
+  }
+
+  return (
+    error?.shortMessage ||
+    error?.reason ||
+    error?.message ||
+    "알 수 없는 오류가 발생했습니다."
+  );
+}
+
+function formatAmount(asset, amount) {
+  if (same(asset, ethers.ZeroAddress)) {
+    return ethers.formatEther(amount) + " ETH";
+  }
+
+  return (
+    ethers.formatUnits(amount, tokenDecimals) +
+    ` ${tokenSymbol}`
+  );
+}
+
 async function connectWallet() {
   try {
-    if (!window.ethereum) throw new Error("MetaMask 미설치");
-    await window.ethereum.request({ method: "eth_requestAccounts" });
-    const chainId = await window.ethereum.request({ method: "eth_chainId" });
-    if (chainId.toLowerCase() !== CONFIG.chainId) throw new Error(`${CONFIG.name} 네트워크로 변경하세요`);
+    if (!window.ethereum) {
+      throw new Error("MetaMask가 설치되어 있지 않습니다.");
+    }
+
+    await window.ethereum.request({
+      method: "eth_requestAccounts"
+    });
+
+    const chainId = await window.ethereum.request({
+      method: "eth_chainId"
+    });
+
+    if (
+      chainId.toLowerCase() !==
+      CONFIG.chainId.toLowerCase()
+    ) {
+      throw new Error(
+        "MetaMask Network를 Hardhat Local로 변경하세요."
+      );
+    }
 
     provider = new ethers.BrowserProvider(window.ethereum);
     signer = await provider.getSigner();
@@ -170,220 +247,489 @@ async function connectWallet() {
 
     await initContracts();
     await refreshAll();
-    await listenEvents();
-  } catch (e) {
-    setStatus(`연결 실패: ${friendlyError(e)}`);
+    listenEvents();
+
+    setStatus(
+      `Wallet 연결 완료: ${short(account)}`
+    );
+  }
+  catch (error) {
+    setStatus(friendlyError(error));
   }
 }
 
 async function initContracts() {
-  if (!ethers.isAddress(CONFIG.giveChain) || !ethers.isAddress(CONFIG.token)) {
-    throw new Error("CONFIG의 Contract 주소를 실제 값으로 교체하세요");
+  if (!ethers.isAddress(CONFIG.giveChain)) {
+    throw new Error(
+      "GiveChainV2 Contract Address를 설정하세요."
+    );
   }
-  const mk = (addr, abi, runner) => new ethers.Contract(addr, abi, runner);
-  giveChainRead = mk(CONFIG.giveChain, GIVECHAIN_ABI, provider);
-  giveChainWrite = mk(CONFIG.giveChain, GIVECHAIN_ABI, signer);
-  tokenRead = mk(CONFIG.token, ERC20_ABI, provider);
-  tokenWrite = mk(CONFIG.token, ERC20_ABI, signer);
 
-  // 주소에 실제 코드가 있는지 확인 ("유령 DApp" 방지)
-  const [code1, code2] = await Promise.all([provider.getCode(CONFIG.giveChain), provider.getCode(CONFIG.token)]);
-  if (code1 === "0x" || code2 === "0x") throw new Error("해당 네트워크에 Contract가 없습니다 (주소/네트워크 확인)");
+  if (!ethers.isAddress(CONFIG.token)) {
+    throw new Error(
+      "GiveTokenV2 Contract Address를 설정하세요."
+    );
+  }
+
+  giveChainRead = new ethers.Contract(
+    CONFIG.giveChain,
+    GIVECHAIN_ABI,
+    provider
+  );
+
+  giveChainWrite = new ethers.Contract(
+    CONFIG.giveChain,
+    GIVECHAIN_ABI,
+    signer
+  );
+
+  tokenRead = new ethers.Contract(
+    CONFIG.token,
+    ERC20_ABI,
+    provider
+  );
+
+  tokenWrite = new ethers.Contract(
+    CONFIG.token,
+    ERC20_ABI,
+    signer
+  );
 
   tokenDecimals = Number(await tokenRead.decimals());
   tokenSymbol = await tokenRead.symbol();
 }
 
-/* ===== 조회 ===== */
 async function loadAccountSummary() {
-  const [ethBal, tokBal, allowance, owner] = await Promise.all([
-    provider.getBalance(account),
-    tokenRead.balanceOf(account),
-    tokenRead.allowance(account, CONFIG.giveChain),
-    giveChainRead.owner()
-  ]);
-  appOwner = owner;
-  $("ownerPanel").hidden = !same(account, appOwner);
-  $("accountInfo").innerHTML =
-    `Account: ${short(account)} | ETH: ${Number(ethers.formatEther(ethBal)).toFixed(4)} | ` +
-    `${tokenSymbol}: ${ethers.formatUnits(tokBal, tokenDecimals)} | ` +
-    `Allowance: ${ethers.formatUnits(allowance, tokenDecimals)}` +
-    (same(account, appOwner) ? ` | <span class="badge">OWNER</span>` : "");
+  appOwner = await giveChainRead.owner();
+
+  const [ethBalance, tokenBalance, allowance] =
+    await Promise.all([
+      provider.getBalance(account),
+      tokenRead.balanceOf(account),
+      tokenRead.allowance(account, CONFIG.giveChain)
+    ]);
+
+  $("accountInfo").innerHTML = `
+    <strong>Account</strong>: ${short(account)}<br>
+    <strong>ETH</strong>: ${ethers.formatEther(ethBalance)}<br>
+    <strong>${tokenSymbol}</strong>:
+    ${ethers.formatUnits(tokenBalance, tokenDecimals)}<br>
+    <strong>Allowance</strong>:
+    ${ethers.formatUnits(allowance, tokenDecimals)}
+    ${tokenSymbol}
+  `;
+
+  $("ownerPanel").hidden =
+    !same(account, appOwner);
 }
 
 async function loadCampaigns() {
-  const count = Number(await giveChainRead.campaignCount());
-  const list = $("campaignList");
-  list.innerHTML = "";
-  if (count === 0) list.innerHTML = `<span class="mute">Campaign 없음</span>`;
+  const count = Number(
+    await giveChainRead.campaignCount()
+  );
+
+  $("campaignList").innerHTML = "";
+
+  if (count === 0) {
+    $("campaignList").innerHTML =
+      "아직 Campaign이 없습니다.";
+    return;
+  }
+
   for (let id = 0; id < count; id++) {
-    const c = await giveChainRead.campaigns(id);
-    const mine = await giveChainRead.donations(id, account);
-    renderCampaign(id, c, mine);
+    const campaign = await giveChainRead.campaigns(id);
+    const myDonation = await giveChainRead.donations(
+      id,
+      account
+    );
+
+    renderCampaign(id, campaign, myDonation);
   }
 }
 
 function renderCampaign(id, c, myDonation) {
-  const eth = isETH(c.asset);
+  const isETH = same(c.asset, ethers.ZeroAddress);
   const stage = Number(c.stage);
-  const sName = stageName(stage);
-  const canFinalize = same(account, appOwner) && stage === 1;
-  const canWithdraw = same(account, c.beneficiary) && stage === 2 && !c.withdrawn;
-  const canRefund = stage === 3 && myDonation > 0n;
-  const canDonate = stage === 1;
-  const pct = c.goal > 0n ? Number((c.raised * 100n) / c.goal) : 0;
+  const symbol = isETH ? "ETH" : tokenSymbol;
 
-  const el = document.createElement("div");
-  el.className = "card";
-  el.innerHTML = `
-    <div class="row" style="justify-content:space-between">
-      <strong>#${id} ${esc(c.title)}</strong><span class="badge ${sName}">${sName}</span>
+  const format = (value) =>
+    isETH
+      ? ethers.formatEther(value)
+      : ethers.formatUnits(value, tokenDecimals);
+
+  const canFinalize =
+    same(account, appOwner) &&
+    stage === 1;
+
+  const canWithdraw =
+    same(account, c.beneficiary) &&
+    stage === 2 &&
+    !c.withdrawn;
+
+  const canRefund =
+    stage === 3 &&
+    myDonation > 0n;
+
+  const card = document.createElement("article");
+  card.className = "campaign";
+
+  card.innerHTML = `
+    <h3>#${id} ${c.title}</h3>
+
+    <div class="campaign-info">
+      <strong>Asset</strong>: ${symbol}<br>
+      <strong>Stage</strong>: ${stageName(stage)}<br>
+      <strong>Goal</strong>: ${format(c.goal)} ${symbol}<br>
+      <strong>Raised</strong>: ${format(c.raised)} ${symbol}<br>
+      <strong>Beneficiary</strong>: ${short(c.beneficiary)}<br>
+      <strong>My Donation</strong>:
+      ${format(myDonation)} ${symbol}
     </div>
-    <div class="kv">
-      <span class="mute">Asset</span><span>${eth ? "ETH" : tokenSymbol}</span>
-      <span class="mute">Goal</span><span>${fmt(c.asset, c.goal)}</span>
-      <span class="mute">Raised</span><span>${fmt(c.asset, c.raised)} (${pct}%)</span>
-      <span class="mute">Beneficiary</span><span class="mono">${short(c.beneficiary)}</span>
-      <span class="mute">My Donation</span><span>${fmt(c.asset, myDonation)}</span>
+
+    <div class="actions">
+      ${
+        stage === 1
+          ? `<input id="amount-${id}" placeholder="기부 금액">`
+          : ""
+      }
+
+      ${
+        stage === 1 && !isETH
+          ? `<button class="approveBtn">Approve ${tokenSymbol}</button>`
+          : ""
+      }
+
+      ${
+        stage === 1
+          ? `<button class="donateBtn">Donate</button>`
+          : ""
+      }
+
+      ${
+        canFinalize
+          ? `<button class="finalizeBtn">Finalize</button>`
+          : ""
+      }
+
+      ${
+        canWithdraw
+          ? `<button class="withdrawBtn">Withdraw</button>`
+          : ""
+      }
+
+      ${
+        canRefund
+          ? `<button class="refundBtn">Refund</button>`
+          : ""
+      }
     </div>
-    <div class="bar"><i style="width:${Math.min(pct, 100)}%"></i></div>
-    <div class="row actions"></div>`;
+  `;
 
-  const actions = el.querySelector(".actions");
-  const add = (label, cls, fn) => {
-    const b = document.createElement("button");
-    b.textContent = label; if (cls) b.className = cls;
-    b.addEventListener("click", fn);
-    actions.appendChild(b);
-  };
+  card.querySelector(".approveBtn")?.addEventListener(
+    "click",
+    () => approveGVT(id)
+  );
 
-  if (canDonate) {
-    const input = document.createElement("input");
-    input.placeholder = eth ? "ETH 금액" : `${tokenSymbol} 금액`;
-    input.inputMode = "decimal"; input.size = 12;
-    actions.appendChild(input);
-    if (!eth) add(`Approve ${tokenSymbol}`, "ghost", () => approveGVT(input.value));
-    add("Donate", "ok", () => donate(id, c, input.value));
-  }
-  if (canFinalize) add("Finalize", "", () =>
-    runTx("종료 판정", () => giveChainWrite.finalizeCampaign(id)));
-  if (canWithdraw) add("Withdraw", "ok", () =>
-    runTx("수혜자 출금", () => giveChainWrite.withdraw(id)));
-  if (canRefund) add("Refund", "bad", () =>
-    runTx("기부금 환불", () => giveChainWrite.refund(id)));
+  card.querySelector(".donateBtn")?.addEventListener(
+    "click",
+    () => donate(id)
+  );
 
-  $("campaignList").appendChild(el);
-}
+  card.querySelector(".finalizeBtn")?.addEventListener(
+    "click",
+    () => finalize(id)
+  );
 
-async function refreshAll() {
-  await loadAccountSummary();
-  await loadCampaigns();
-  $("netLabel").textContent = `${CONFIG.name} · chain ${parseInt(CONFIG.chainId, 16)}`;
-}
+  card.querySelector(".withdrawBtn")?.addEventListener(
+    "click",
+    () => withdraw(id)
+  );
 
-/* ===== 트랜잭션 ===== */
-function parseAmount(value, asset) {
-  const v = String(value).trim();
-  if (!/^\d+(\.\d+)?$/.test(v) || Number(v) <= 0) throw new Error("금액을 확인하세요");
-  return isETH(asset) ? ethers.parseEther(v) : ethers.parseUnits(v, tokenDecimals);
+  card.querySelector(".refundBtn")?.addEventListener(
+    "click",
+    () => refund(id)
+  );
+
+  $("campaignList").appendChild(card);
 }
 
 async function createCampaign() {
-  try {
-    const title = $("titleInput").value.trim();
-    const goal = $("goalInput").value.trim();
-    const beneficiary = $("beneficiaryInput").value.trim();
-    const asset = $("assetSelect").value === "ETH" ? ethers.ZeroAddress : CONFIG.token;
-    if (!title || !ethers.isAddress(beneficiary)) return setStatus("입력값 확인");
-    const rawGoal = parseAmount(goal, asset);
-    await runTx("Campaign 생성", () =>
-      giveChainWrite.createCampaign(title, rawGoal, beneficiary, asset));
-  } catch (e) { setStatus(`Campaign 생성 실패: ${friendlyError(e)}`); }
+  const title = $("titleInput").value.trim();
+  const goal = $("goalInput").value.trim();
+  const beneficiary = $("beneficiaryInput").value.trim();
+
+  const asset =
+    $("assetSelect").value === "ETH"
+      ? ethers.ZeroAddress
+      : CONFIG.token;
+
+  if (
+    !title ||
+    !goal ||
+    !ethers.isAddress(beneficiary)
+  ) {
+    setStatus("Campaign 입력값을 확인하세요.");
+    return;
+  }
+
+  const rawGoal =
+    same(asset, ethers.ZeroAddress)
+      ? ethers.parseEther(goal)
+      : ethers.parseUnits(goal, tokenDecimals);
+
+  await runTx(
+    "Campaign 생성",
+    () => giveChainWrite.createCampaign(
+      title,
+      rawGoal,
+      beneficiary,
+      asset
+    )
+  );
 }
 
-async function approveGVT(value) {
-  try {
-    const amount = parseAmount(value, CONFIG.token);
-    await runTx(`${tokenSymbol} 사용 승인`, () => tokenWrite.approve(CONFIG.giveChain, amount));
-  } catch (e) { setStatus(`승인 실패: ${friendlyError(e)}`); }
+async function approveGVT(id) {
+  const value = $(`amount-${id}`)?.value.trim();
+
+  if (!value) {
+    setStatus("금액을 입력하세요.");
+    return;
+  }
+
+  const amount = ethers.parseUnits(
+    value,
+    tokenDecimals
+  );
+
+  await runTx(
+    `${tokenSymbol} 사용 승인`,
+    () => tokenWrite.approve(
+      CONFIG.giveChain,
+      amount
+    )
+  );
 }
 
-async function donate(id, c, value) {
-  try {
-    const amount = parseAmount(value, c.asset);
-    if (isETH(c.asset)) {
-      await runTx("ETH 기부", () => giveChainWrite.donateETH(id, { value: amount }));
-    } else {
-      await runTx(`${tokenSymbol} 기부`, () => giveChainWrite.donateToken(id, amount));
-    }
-  } catch (e) { setStatus(`기부 실패: ${friendlyError(e)}`); }
+async function donate(id) {
+  const value = $(`amount-${id}`)?.value.trim();
+
+  if (!value) {
+    setStatus("기부 금액을 입력하세요.");
+    return;
+  }
+
+  const c = await giveChainRead.campaigns(id);
+
+  if (same(c.asset, ethers.ZeroAddress)) {
+    const amount = ethers.parseEther(value);
+
+    await runTx(
+      "ETH 기부",
+      () => giveChainWrite.donateETH(
+        id,
+        { value: amount }
+      )
+    );
+
+    return;
+  }
+
+  const amount = ethers.parseUnits(
+    value,
+    tokenDecimals
+  );
+
+  await runTx(
+    `${tokenSymbol} 기부`,
+    () => giveChainWrite.donateToken(
+      id,
+      amount
+    )
+  );
+}
+
+async function finalize(id) {
+  await runTx(
+    "Campaign 종료 판정",
+    () => giveChainWrite.finalizeCampaign(id)
+  );
+}
+
+async function withdraw(id) {
+  await runTx(
+    "수혜자 출금",
+    () => giveChainWrite.withdraw(id)
+  );
+}
+
+async function refund(id) {
+  await runTx(
+    "기부금 환불",
+    () => giveChainWrite.refund(id)
+  );
 }
 
 async function runTx(label, send) {
-  if (busy) return;
-  busy = true;
-  document.querySelectorAll("button").forEach((b) => (b.disabled = true));
   try {
-    setStatus(`${label}: 승인 대기 중…`);
+    setStatus(`${label}: MetaMask 승인 대기 중...`);
+
     const tx = await send();
-    setStatus(`${label}: 제출됨 · ${txLink(tx.hash)} · 블록 포함 대기…`);
+
+    setStatus(`
+      ${label} 제출됨<br>
+      <a href="${txUrl(tx.hash)}" target="_blank">
+        ${short(tx.hash)}
+      </a>
+    `);
+
     const receipt = await tx.wait();
-    if (receipt.status !== 1) throw new Error("Tx 실패");
-    setStatus(`✓ ${label} 완료 · Block #${receipt.blockNumber} · ${txLink(tx.hash)}`);
-    busy = false;
+
+    if (receipt.status !== 1) {
+      throw new Error("Transaction이 실패했습니다.");
+    }
+
+    setStatus(`
+      ${label} 완료<br>
+      Block: ${receipt.blockNumber}<br>
+      <a href="${txUrl(tx.hash)}" target="_blank">
+        Explorer에서 확인
+      </a>
+    `);
+
     await refreshAll();
-  } catch (e) {
-    setStatus(`${label} 실패: ${friendlyError(e)}`);
-  } finally {
-    busy = false;
-    document.querySelectorAll("button").forEach((b) => (b.disabled = false));
+
+    return receipt;
+  }
+  catch (error) {
+    setStatus(
+      `${label} 실패: ${friendlyError(error)}`
+    );
+
+    return null;
   }
 }
 
-/* ===== Event ===== */
 async function loadDonationEvents() {
+  if (!giveChainRead) {
+    setStatus("먼저 Wallet을 연결하세요.");
+    return;
+  }
+
   try {
     const latest = await provider.getBlockNumber();
-    const fromBlock = CONFIG.deploymentBlock > 0 ? CONFIG.deploymentBlock : Math.max(0, latest - 5000);
-    const logs = await giveChainRead.queryFilter(giveChainRead.filters.Donated(), fromBlock, latest);
-    const list = $("eventList");
-    list.innerHTML = logs.length ? "" : `<li class="mute">기부 기록 없음</li>`;
-    for (const log of logs.slice(-20).reverse()) {
-      const { campaignId, donor, asset, amount } = log.args;
-      const li = document.createElement("li");
-      li.innerHTML = `#${campaignId} <span class="mono">${short(donor)}</span> — <strong>${fmt(asset, amount)}</strong> ` +
-        (CONFIG.explorer ? `<a href="${txUrl(log.transactionHash)}" target="_blank" rel="noopener">Tx</a>` : "");
-      list.appendChild(li);
+
+    const fromBlock =
+      CONFIG.deploymentBlock > 0
+        ? CONFIG.deploymentBlock
+        : Math.max(0, latest - 5000);
+
+    const logs = await giveChainRead.queryFilter(
+      giveChainRead.filters.Donated(),
+      fromBlock,
+      latest
+    );
+
+    if (logs.length === 0) {
+      $("eventList").innerHTML =
+        "<li>기부 Event가 없습니다.</li>";
+      return;
     }
-  } catch (e) { setStatus(`Event 조회 실패: ${friendlyError(e)}`); }
+
+    $("eventList").innerHTML =
+      logs
+        .slice(-20)
+        .reverse()
+        .map((log) => {
+          const [
+            campaignId,
+            donor,
+            asset,
+            amount
+          ] = log.args;
+
+          return `
+            <li>
+              Campaign #${campaignId}
+              · ${short(donor)}
+              · ${formatAmount(asset, amount)}
+              · <a href="${txUrl(log.transactionHash)}" target="_blank">Tx</a>
+            </li>
+          `;
+        })
+        .join("");
+  }
+  catch (error) {
+    setStatus(friendlyError(error));
+  }
 }
 
-async function listenEvents() {
-  await giveChainRead.removeAllListeners();
-  let t;
-  const onChange = (msg) => {           // 같은 블록의 여러 이벤트를 한 번만 반영
-    clearTimeout(t);
-    t = setTimeout(async () => {
-      if (busy) return;
-      setStatus(msg);
+function listenEvents() {
+  if (!giveChainRead) return;
+
+  giveChainRead.removeAllListeners("Donated");
+
+  giveChainRead.on(
+    "Donated",
+    async (campaignId, donor, asset, amount) => {
+      setStatus(`
+        새 기부 감지<br>
+        Campaign #${campaignId}<br>
+        ${short(donor)}<br>
+        ${formatAmount(asset, amount)}
+      `);
+
       await refreshAll();
-      await loadDonationEvents();
-    }, 500);
-  };
-  await giveChainRead.on("Donated", (id) => onChange(`새 기부 감지: #${id}`));
-  await giveChainRead.on("CampaignFinalized", (id) => onChange(`Campaign #${id} 종료 판정`));
+    }
+  );
 }
 
-/* ===== 이벤트 바인딩 ===== */
-$("connectBtn").addEventListener("click", connectWallet);
-$("refreshBtn").addEventListener("click", () => account ? refreshAll().catch((e) => setStatus(friendlyError(e))) : connectWallet());
-$("createBtn").addEventListener("click", createCampaign);
-$("eventsBtn").addEventListener("click", () => account ? loadDonationEvents() : setStatus("먼저 MetaMask를 연결하세요"));
+async function refreshAll() {
+  if (!account || !giveChainRead) return;
+
+  await loadAccountSummary();
+  await loadCampaigns();
+}
+
+$("connectBtn").addEventListener(
+  "click",
+  connectWallet
+);
+
+$("refreshBtn").addEventListener(
+  "click",
+  async () => {
+    if (!account) {
+      setStatus("먼저 Wallet을 연결하세요.");
+      return;
+    }
+
+    await refreshAll();
+    setStatus("화면을 새로고침했습니다.");
+  }
+);
+
+$("createBtn").addEventListener(
+  "click",
+  createCampaign
+);
+
+$("eventsBtn").addEventListener(
+  "click",
+  loadDonationEvents
+);
 
 if (window.ethereum) {
-  window.ethereum.on("accountsChanged", () => location.reload());
-  window.ethereum.on("chainChanged", () => location.reload());
+  window.ethereum.on(
+    "accountsChanged",
+    () => location.reload()
+  );
+
+  window.ethereum.on(
+    "chainChanged",
+    () => location.reload()
+  );
 }
+
 </script>
 </body>
 </html>

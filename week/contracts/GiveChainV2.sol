@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-/// @notice GiveChain V1 + ERC-20 support. One campaign settles in exactly one asset:
-/// asset == address(0) -> ETH, otherwise the ERC-20 token address.
 contract GiveChainV2 {
     using SafeERC20 for IERC20;
 
@@ -21,39 +19,28 @@ contract GiveChainV2 {
         string title;
         uint256 goal;
         uint256 raised;
-        address payable beneficiary;
-        address asset; // address(0) = ETH
+        address beneficiary;
+        address asset; // address(0) = ETH, otherwise ERC-20 token address
         Stage stage;
         bool withdrawn;
         uint256 refunded;
     }
 
-    // storage
-    address public owner;
-    uint256 public campaignCount;
-    mapping(uint256 => Campaign) public campaigns;
-    mapping(uint256 => mapping(address => uint256)) public donations;
-    // historical total per asset; NOT reduced by refunds/withdrawals
-    mapping(address => uint256) public lifetimeDonatedByAsset;
-    bool private locked;
-
-    // errors
-    error OnlyOwner();
-    error InvalidCampaign();
-    error InvalidBeneficiary();
+    error NotOwner();
+    error CampaignNotFound(uint256 id);
     error InvalidGoal();
+    error InvalidBeneficiary();
     error InvalidAsset();
-    error InvalidDonation();
+    error InvalidAmount();
     error InvalidStage();
     error WrongAssetType();
-    error OnlyBeneficiary();
-    error NoDonation();
+    error NotBeneficiary();
     error AlreadyWithdrawn();
-    error CampaignHasDonation();
-    error ReentrantCall();
+    error NothingToRefund();
     error TransferFailed();
+    error CampaignAlreadyFunded();
+    error ReentrantCall();
 
-    // events
     event CampaignCreated(
         uint256 indexed campaignId,
         address indexed owner,
@@ -62,39 +49,59 @@ contract GiveChainV2 {
         address indexed beneficiary,
         address asset
     );
+
     event Donated(
         uint256 indexed campaignId,
         address indexed donor,
         address indexed asset,
         uint256 amount
     );
-    event CampaignFinalized(uint256 indexed campaignId, Stage stage);
+
+    event CampaignFinalized(
+        uint256 indexed campaignId,
+        Stage stage
+    );
+
     event Withdrawn(
         uint256 indexed campaignId,
         address indexed beneficiary,
         address indexed asset,
         uint256 amount
     );
+
     event Refunded(
         uint256 indexed campaignId,
         address indexed donor,
         address indexed asset,
         uint256 amount
     );
+
     event BeneficiaryChanged(
         uint256 indexed campaignId,
         address indexed oldBeneficiary,
         address indexed newBeneficiary
     );
 
-    // modifiers
+    address public immutable owner;
+    uint256 public campaignCount;
+
+    mapping(uint256 => Campaign) public campaigns;
+    mapping(uint256 => mapping(address => uint256)) public donations;
+    mapping(address => uint256) public lifetimeDonatedByAsset;
+
+    bool private locked;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
     modifier onlyOwner() {
-        if (msg.sender != owner) revert OnlyOwner();
+        if (msg.sender != owner) revert NotOwner();
         _;
     }
 
     modifier validCampaign(uint256 id) {
-        if (id >= campaignCount) revert InvalidCampaign();
+        if (id >= campaignCount) revert CampaignNotFound(id);
         _;
     }
 
@@ -105,73 +112,89 @@ contract GiveChainV2 {
         locked = false;
     }
 
-    constructor() {
-        owner = msg.sender;
-    }
-
-    // create / finalize
     function createCampaign(
         string calldata title,
         uint256 goal,
-        address payable beneficiary,
+        address beneficiary,
         address asset
-    ) external onlyOwner returns (uint256 id) {
-        if (beneficiary == address(0)) revert InvalidBeneficiary();
+    )
+        external
+        onlyOwner
+        returns (uint256 id)
+    {
         if (goal == 0) revert InvalidGoal();
-        if (asset != address(0) && asset.code.length == 0) revert InvalidAsset();
+        if (beneficiary == address(0)) revert InvalidBeneficiary();
+
+        if (asset != address(0) && asset.code.length == 0) {
+            revert InvalidAsset();
+        }
 
         id = campaignCount;
+
+        campaigns[id] = Campaign({
+            owner: msg.sender,
+            title: title,
+            goal: goal,
+            raised: 0,
+            beneficiary: beneficiary,
+            asset: asset,
+            stage: Stage.OPEN,
+            withdrawn: false,
+            refunded: 0
+        });
+
         campaignCount++;
 
-        Campaign storage c = campaigns[id];
-        c.owner = msg.sender;
-        c.title = title;
-        c.goal = goal;
-        c.beneficiary = beneficiary;
-        c.asset = asset;
-        c.stage = Stage.OPEN;
-
-        emit CampaignCreated(id, msg.sender, title, goal, beneficiary, asset);
+        emit CampaignCreated(
+            id,
+            msg.sender,
+            title,
+            goal,
+            beneficiary,
+            asset
+        );
     }
 
-    function finalizeCampaign(
-        uint256 id
-    ) external onlyOwner validCampaign(id) {
+    function donateETH(uint256 id)
+        external
+        payable
+        validCampaign(id)
+        nonReentrant
+    {
         Campaign storage c = campaigns[id];
-        if (c.stage != Stage.OPEN) revert InvalidStage();
 
-        c.stage = c.raised >= c.goal ? Stage.SUCCESS : Stage.FAILED;
-
-        emit CampaignFinalized(id, c.stage);
-    }
-
-    // donate
-    function donateETH(uint256 id) external payable validCampaign(id) {
-        Campaign storage c = campaigns[id];
         if (c.stage != Stage.OPEN) revert InvalidStage();
         if (c.asset != address(0)) revert WrongAssetType();
-        if (msg.value == 0) revert InvalidDonation();
+        if (msg.value == 0) revert InvalidAmount();
 
         _recordDonation(id, msg.sender, msg.value);
     }
 
-    function donateToken(
-        uint256 id,
-        uint256 amount
-    ) external validCampaign(id) nonReentrant {
+    function donateToken(uint256 id, uint256 amount)
+        external
+        validCampaign(id)
+        nonReentrant
+    {
         Campaign storage c = campaigns[id];
+
         if (c.stage != Stage.OPEN) revert InvalidStage();
         if (c.asset == address(0)) revert WrongAssetType();
-        if (amount == 0) revert InvalidDonation();
+        if (amount == 0) revert InvalidAmount();
 
         IERC20 token = IERC20(c.asset);
 
-        // record what actually arrived (fee-on-transfer tokens)
-        uint256 beforeBal = token.balanceOf(address(this));
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        uint256 received = token.balanceOf(address(this)) - beforeBal;
+        uint256 beforeBalance = token.balanceOf(address(this));
 
-        if (received == 0) revert InvalidDonation();
+        token.safeTransferFrom(
+            msg.sender,
+            address(this),
+            amount
+        );
+
+        uint256 afterBalance = token.balanceOf(address(this));
+        uint256 received = afterBalance - beforeBalance;
+
+        if (received == 0) revert InvalidAmount();
 
         _recordDonation(id, msg.sender, received);
     }
@@ -187,78 +210,137 @@ contract GiveChainV2 {
         c.raised += amount;
         lifetimeDonatedByAsset[c.asset] += amount;
 
-        emit Donated(id, donor, c.asset, amount);
+        emit Donated(
+            id,
+            donor,
+            c.asset,
+            amount
+        );
     }
 
-    // settlement
-    function withdraw(uint256 id) external validCampaign(id) nonReentrant {
+    function finalizeCampaign(uint256 id)
+        external
+        onlyOwner
+        validCampaign(id)
+    {
         Campaign storage c = campaigns[id];
+
+        if (c.stage != Stage.OPEN) revert InvalidStage();
+
+        if (c.raised >= c.goal) {
+            c.stage = Stage.SUCCESS;
+        } else {
+            c.stage = Stage.FAILED;
+        }
+
+        emit CampaignFinalized(id, c.stage);
+    }
+
+    function withdraw(uint256 id)
+        external
+        validCampaign(id)
+        nonReentrant
+    {
+        Campaign storage c = campaigns[id];
+
         if (c.stage != Stage.SUCCESS) revert InvalidStage();
-        if (msg.sender != c.beneficiary) revert OnlyBeneficiary();
+        if (msg.sender != c.beneficiary) revert NotBeneficiary();
         if (c.withdrawn) revert AlreadyWithdrawn();
 
-        c.withdrawn = true;
         uint256 amount = c.raised;
+        c.withdrawn = true;
 
         _payout(c.asset, c.beneficiary, amount);
 
-        emit Withdrawn(id, c.beneficiary, c.asset, amount);
+        emit Withdrawn(
+            id,
+            c.beneficiary,
+            c.asset,
+            amount
+        );
     }
 
-    function refund(uint256 id) external validCampaign(id) nonReentrant {
+    function refund(uint256 id)
+        external
+        validCampaign(id)
+        nonReentrant
+    {
         Campaign storage c = campaigns[id];
+
         if (c.stage != Stage.FAILED) revert InvalidStage();
 
         uint256 amount = donations[id][msg.sender];
-        if (amount == 0) revert NoDonation();
+        if (amount == 0) revert NothingToRefund();
 
         donations[id][msg.sender] = 0;
         c.refunded += amount;
 
-        _payout(c.asset, payable(msg.sender), amount);
+        _payout(c.asset, msg.sender, amount);
 
-        emit Refunded(id, msg.sender, c.asset, amount);
+        emit Refunded(
+            id,
+            msg.sender,
+            c.asset,
+            amount
+        );
     }
 
     function _payout(
         address asset,
-        address payable receiver,
+        address receiver,
         uint256 amount
     ) internal {
         if (asset == address(0)) {
-            (bool ok, ) = receiver.call{value: amount}("");
-            if (!ok) revert TransferFailed();
-        } else {
-            IERC20(asset).safeTransfer(receiver, amount);
+            (bool success, ) = payable(receiver).call{value: amount}("");
+            if (!success) revert TransferFailed();
+            return;
         }
+
+        IERC20(asset).safeTransfer(receiver, amount);
     }
 
     function changeBeneficiary(
         uint256 id,
-        address payable newBeneficiary
-    ) external onlyOwner validCampaign(id) {
+        address newBeneficiary
+    )
+        external
+        onlyOwner
+        validCampaign(id)
+    {
         Campaign storage c = campaigns[id];
+
         if (c.stage != Stage.OPEN) revert InvalidStage();
+        if (c.raised != 0) revert CampaignAlreadyFunded();
         if (newBeneficiary == address(0)) revert InvalidBeneficiary();
-        if (c.raised != 0) revert CampaignHasDonation();
 
         address oldBeneficiary = c.beneficiary;
         c.beneficiary = newBeneficiary;
 
-        emit BeneficiaryChanged(id, oldBeneficiary, newBeneficiary);
+        emit BeneficiaryChanged(
+            id,
+            oldBeneficiary,
+            newBeneficiary
+        );
     }
 
-    // views
-    function getMyDonation(
-        uint256 id
-    ) external view validCampaign(id) returns (uint256) {
+    function getMyDonation(uint256 id)
+        external
+        view
+        validCampaign(id)
+        returns (uint256)
+    {
         return donations[id][msg.sender];
     }
 
-    function getContractAssetBalance(
-        address asset
-    ) external view returns (uint256) {
-        if (asset == address(0)) return address(this).balance;
+    function getContractAssetBalance(address asset)
+        external
+        view
+        returns (uint256)
+    {
+        if (asset == address(0)) {
+            return address(this).balance;
+        }
+
         return IERC20(asset).balanceOf(address(this));
     }
 }
